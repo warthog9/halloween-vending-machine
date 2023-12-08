@@ -1,0 +1,435 @@
+# Example configuration entry
+esphome:
+  name: halloween-vending
+
+esp32:
+  board: nodemcu-32s
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: high
+  ap:
+    ssid: $devicename
+    password: !secret wifi_ap_password
+  
+captive_portal:
+  
+api:
+  password: !secret esphome_api_password
+
+ota:
+  password: !secret esphome_ota_password
+  
+logger:
+  
+web_server:
+  port: 80
+
+i2c:
+  sda: 26
+  scl: 25
+
+#ads1115:
+#  - address: 0x48
+#  # alert pin 39
+#    continuous_mode: True
+#  # MAX471 is what's hooked up to these
+
+globals:
+  - id: press_count_1
+    type: int
+
+  - id: press_count_2
+    type: int
+
+  - id: press_count_3
+    type: int
+
+  - id: press_count_4
+    type: int
+
+  - id: debug_state
+    type: bool
+
+  - id: running
+    type: bool
+
+status_led:
+  pin: 2
+
+sensor:
+#  - platform: ads1115
+#    multiplexer: 'A0_GND'
+#    gain: 0.512
+#    name: "ADS1115 Channel A0-PWR1"
+#    update_interval: 0.5s
+#
+#  - platform: ads1115
+#    multiplexer: 'A1_GND'
+#    gain: 0.512
+#    name: "ADS1115 Channel A1-PWR2"
+#    update_interval: 0.5s
+#
+#  - platform: ads1115
+#    multiplexer: 'A2_GND'
+#    gain: 0.512
+#    name: "ADS1115 Channel A2-PWR3"
+#    update_interval: 0.5s
+#
+#  - platform: ads1115
+#    multiplexer: 'A3_GND'
+#    gain: 0.512
+#    name: "ADS1115 Channel A3-PWR4"
+#    update_interval: 0.5s
+
+  - platform: template
+    name: "Candy Count - Slot 1"
+    lambda: !lambda |-
+      return id(press_count_1);
+    id: candy_count_1
+    unit_of_measurement: "candy count"
+    accuracy_decimals: 0
+    state_class: "total_increasing"
+    icon: "mdi:candy-outline"
+
+  - platform: template
+    name: "Candy Count - Slot 2"
+    lambda: !lambda |-
+      return id(press_count_2);
+    id: candy_count_2
+    unit_of_measurement: "candy count"
+    accuracy_decimals: 0
+    state_class: "total_increasing"
+    icon: "mdi:candy-outline"
+
+  - platform: template
+    name: "Candy Count - Slot 3"
+    lambda: !lambda |-
+      return id(press_count_3);
+    id: candy_count_3
+    unit_of_measurement: "candy count"
+    accuracy_decimals: 0
+    state_class: "total_increasing"
+    icon: "mdi:candy-outline"
+
+  - platform: template
+    name: "Candy Count - Slot 4"
+    lambda: !lambda |-
+      return id(press_count_4);
+    id: candy_count_4
+    unit_of_measurement: "candy count"
+    accuracy_decimals: 0
+    state_class: "total_increasing"
+    icon: "mdi:candy-outline"
+
+  - platform: template
+    name: "Candy Count - Total"
+    lambda: !lambda |-
+      return id(press_count_1) + id(press_count_2) + id(press_count_3) + id(press_count_4);
+    id: candy_count_total
+    unit_of_measurement: "candy count"
+    accuracy_decimals: 0
+    state_class: "total_increasing"
+    icon: "mdi:candy"
+
+binary_sensor:
+  - platform: gpio
+    pin: 34
+    id: pedal1
+    name: "Pedal 1"
+    on_press:
+      - if:
+          condition:
+            lambda: 'return !id(running);'
+          then:
+            - switch.turn_on: sequence1
+
+  - platform: gpio
+    pin: 35
+    id: pedal2
+    name: "Pedal 2"
+    on_press:
+      - if:
+          condition:
+            lambda: 'return !id(running);'
+          then:
+            - switch.turn_on: sequence2
+
+  - platform: gpio
+    pin: 32
+    id: pedal3
+    name: "Pedal 3"
+    on_press:
+      - if:
+          condition:
+            lambda: 'return !id(running);'
+          then:
+            - switch.turn_on: sequence3
+
+  - platform: gpio
+    pin: 33
+    id: pedal4
+    name: "Pedal 4"
+    on_press:
+      - if:
+          condition:
+            lambda: 'return !id(running);'
+          then:
+            - switch.turn_on: sequence4
+
+  - platform: gpio
+    pin:
+      number: 19
+      inverted: true
+    id: motor_running_1
+    name: "Motor Running 1"
+    on_release:
+      then:
+        - lambda: !lambda |-
+            id(running) = 0;
+            ESP_LOGD("custom", "running: %d", id( running ) );
+        - switch.turn_off: sequence1 # has to be the last call
+
+  - platform: gpio
+    pin: 
+      number: 21
+      inverted: true
+    id: motor_running_2
+    name: "Motor Running 2"
+    on_release:
+      then:
+        - lambda: !lambda |-
+            id(running) = 0;
+            ESP_LOGD("custom", "running: %d", id( running ) );
+        - switch.turn_off: sequence2 # has to be the last call
+
+  - platform: gpio
+    pin:
+      number: 22
+      inverted: true
+    id: motor_running_3
+    name: "Motor Running 3"
+    on_release:
+      then:
+        - lambda: !lambda |-
+            id(running) = 0;
+            ESP_LOGD("custom", "running: %d", id( running ) );
+        - switch.turn_off: sequence3 # has to be the last call
+
+  - platform: gpio
+    pin:
+      number: 23
+      inverted: true
+    id: motor_running_4
+    name: "Motor Running 4"
+    on_release:
+      then:
+        - lambda: !lambda |-
+            id(running) = 0;
+            ESP_LOGD("custom", "running: %d", id( running ) );
+        - switch.turn_off: sequence3 # has to be the last call
+
+switch:
+  - platform: gpio
+    pin: 16
+    inverted: True
+    id: relay1
+    name: "Relay 1"
+    interlock: &interlock_group [relay1, relay2, relay3, relay4]
+    interlock_wait_time: 3s
+    on_turn_on:
+      then:
+        - switch.turn_on: relay1
+        - delay: 1s
+        - switch.turn_off: relay1
+
+  - platform: gpio
+    pin: 17
+    inverted: True
+    id: relay2
+    name: "Relay 2"
+    interlock: *interlock_group
+    interlock_wait_time: 3s
+    on_turn_on:
+            switch.channel_1_transistor
+            switch.channel_1_transistor
+      then:
+        - switch.turn_on: relay2
+        - delay: 1s
+        - switch.turn_off: relay2
+
+  - platform: gpio
+    pin: 5
+    inverted: True
+    id: relay3
+    name: "Relay 3"
+    interlock: *interlock_group
+    interlock_wait_time: 3s
+    on_turn_on:
+      then:
+        - switch.turn_on: relay3
+        - delay: 1s
+        - switch.turn_off: relay3
+
+  - platform: gpio
+    pin: 18
+    inverted: True
+    id: relay4
+    name: "Relay 4"
+    interlock: *interlock_group
+    interlock_wait_time: 3s
+    on_turn_on:
+      then:
+        - switch.turn_on: relay4
+        - delay: 1s
+        - switch.turn_off: relay4
+
+  - platform: template
+    name: "Debug"
+    lambda: |-
+      if (id(debug_state)) {
+        return true;
+      } else {
+        return false;
+      }
+    turn_on_action:
+      - lambda: !lambda |-
+          id(debug_state) = 1;
+    turn_off_action:
+      - lambda: !lambda |-
+          id(debug_state) = 0;
+
+  - platform: template
+    name: "Run Sequence 1"
+    id: sequence1
+    turn_on_action:
+      then:
+        - lambda: !lambda |-
+            ESP_LOGD("custom", "running: %d", id( running ) );
+        - if:
+            condition:
+              lambda: 'return !id(running);'
+            then:
+              - lambda: !lambda |-
+                  id(running) = 1;
+                  ESP_LOGD("custom", "running: %d", id( running ) );
+              - switch.turn_on: relay1
+              - lambda: !lambda |-
+                  if( !id(debug_state) ){
+                    id(press_count_1) += 1;
+                    id(candy_count_1).publish_state(id(press_count_1));
+                    id(candy_count_total).publish_state(
+                      id(press_count_1) + id(press_count_2) + id(press_count_3) + id(press_count_4)
+                    );
+                  }
+
+  - platform: template
+    name: "Run Sequence 2"
+    id: sequence2
+    turn_on_action:
+      then:
+        - lambda: !lambda |-
+            ESP_LOGD("custom", "running: %d", id( running ) );
+        - if:
+            condition:
+              lambda: 'return !id(running);'
+            then:
+              - lambda: !lambda |-
+                  id(running) = 1;
+                  ESP_LOGD("custom", "running: %d", id( running ) );
+              - switch.turn_on: relay2
+              - lambda: !lambda |-
+                  if( !id(debug_state) ){
+                    id(press_count_2) += 1;
+                    id(candy_count_2).publish_state(id(press_count_2));
+                    id(candy_count_total).publish_state(
+                      id(press_count_1) + id(press_count_2) + id(press_count_3) + id(press_count_4)
+                    );
+                  }
+
+  - platform: template
+    name: "Run Sequence 3"
+    id: sequence3
+    turn_on_action:
+      then:
+        - lambda: !lambda |-
+            ESP_LOGD("custom", "running: %d", id( running ) );
+        - if:
+            condition:
+              lambda: 'return !id(running);'
+            then:
+              - lambda: !lambda |-
+                  id(running) = 1;
+                  ESP_LOGD("custom", "running: %d", id( running ) );
+              - switch.turn_on: relay3
+              - lambda: !lambda |-
+                  if( !id(debug_state) ){
+                    id(press_count_3) += 1;
+                    id(candy_count_3).publish_state(id(press_count_3));
+                    id(candy_count_total).publish_state(
+                      id(press_count_1) + id(press_count_2) + id(press_count_3) + id(press_count_4)
+                    );
+                  }
+
+  - platform: template
+    name: "Run Sequence 4"
+    id: sequence4
+    turn_on_action:
+      then:
+        - lambda: !lambda |-
+            ESP_LOGD("custom", "running: %d", id( running ) );
+        - if:
+            condition:
+              lambda: 'return !id(running);'
+            then: 
+              - lambda: !lambda |-
+                  id(running) = 1;
+                  ESP_LOGD("custom", "running: %d", id( running ) );
+              - switch.turn_on: relay4
+              - lambda: !lambda |-
+                  if( !id(debug_state) ){
+                    id(press_count_4) += 1;
+                    id(candy_count_4).publish_state(id(press_count_4));
+                    id(candy_count_total).publish_state(
+                      id(press_count_1) + id(press_count_2) + id(press_count_3) + id(press_count_4)
+                    );
+                  }
+
+button:
+  - platform: template
+    name: "Reset Count"
+    on_press:
+      then:
+        - lambda: !lambda |-
+            id(press_count_1) = 0;
+            id(press_count_2) = 0;
+            id(press_count_3) = 0;
+            id(press_count_4) = 0;
+            id(candy_count_1).publish_state(id(press_count_1));
+            id(candy_count_2).publish_state(id(press_count_2));
+            id(candy_count_3).publish_state(id(press_count_3));
+            id(candy_count_3).publish_state(id(press_count_4));
+            id(candy_count_total).publish_state(0);
+
+  - platform: template
+    name: "Calibrate"
+    id: calibrate
+    on_press:
+      then:
+        - switch.turn_on: relay1
+        - delay: 5s
+        - switch.turn_on: relay1
+        - delay: 5s
+        - switch.turn_on: relay2
+        - delay: 5s
+        - switch.turn_on: relay2
+        - delay: 5s
+        - switch.turn_on: relay3
+        - delay: 5s
+        - switch.turn_on: relay3
+        - delay: 5s
+        - switch.turn_on: relay4
+        - delay: 5s
+        - switch.turn_on: relay4
+        - delay: 5s
